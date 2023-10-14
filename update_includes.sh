@@ -191,9 +191,9 @@ update_files(){
     local _ret=$?
 
     if [[ $_ret -eq 0 ]]; then 
-      echo "Updating file: $(basename "${f}") ..."
+      echo " - Updating file: $(basename "${f}")"
     elif [[ $_ret -eq 1 ]]; then
-      echo "Initial. file: $(basename "${f}") ..."
+      echo " - Initial. file: $(basename "${f}")"
     fi
     
     echo -n "${update_content}" > "${f}"
