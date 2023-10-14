@@ -79,7 +79,7 @@ __run(){
     [[ "${1:0:1}" != "-" ]] && break
   done
 
-  # [[ "${DEBUG}" == "1" ]] &&  echo -e "${_COLOR[GRAY]}[DEBUG] $*${_COLOR[RESET]}"
+  [[ "${DEBUG}" == "1" ]] &&  echo -e "${_COLOR[GRAY]}[DEBUG] $*${_COLOR[RESET]}"
 
   [[ "${_custom_title}" != "" ]] && {
     echo -ne "${_custom_title} "
