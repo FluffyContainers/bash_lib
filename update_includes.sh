@@ -184,7 +184,7 @@ update_file(){
 
 update_files(){
   local _template="$1"
-  for f in "${REPLACE_DIR}/"*; do
+  for f in "${REPLACE_DIR}/"{.*,*}; do
     [[ -d "${f}" ]] && continue
 
     local update_content; update_content="$(update_file "${f}" "${_template}")"
