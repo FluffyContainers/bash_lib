@@ -34,11 +34,14 @@ __dir(){
   done
   echo -n "$(cd -P "$( dirname "${__source}" )" 1>/dev/null 2>&1 && pwd)"
 }
+
 DIR=$(__dir)
+LINK_DIR=$(cd -P "$( dirname "${BASH_SOURCE[0]}" )" 1>/dev/null 2>&1 && pwd)
 
 
-TPL_DIR="${DIR}/src/includes"
-REPLACE_DIR="${DIR}/src"
+TPL_DIR="${DIR}/modules"
+TPL_LINK_DIR="${LINK_DIR}/src/modules"
+REPLACE_DIR="${LINK_DIR}/src"
 
 __START_INCLUDE="[template] !!! DO NOT MODIFY CODE INSIDE. INSTEAD USE apply-teplate.sh script to update template !!!"
 __END_INCLUDE="[template] [end] !!! DO NOT REMOVE ANYTHING INSIDE, INCLUDING CURRENT LINE !!!"
@@ -48,12 +51,21 @@ __END_BLOCK="[end]"
 __TEMPLATE_PLACEHOLDER="[template]"
 __MODULE_OPTIONS="options:"
 
+# key format -> [module_name,is_optional] = module_content
 declare -A _TEMPLATES=()
 
 
-read_modules(){
-  # shellcheck disable=SC2094
-  for f in "${TPL_DIR}/"*; do
+module_exists(){
+  local _query="$1"
+  for a in "${!_TEMPLATES[@]}"; do
+    IFS="," read -r -a arr <<< "${a}"
+    [[ "${arr[0]}" == "${_query}" ]] && return 0 || true
+  done
+  return 1
+}
+
+proccess_module(){
+    local f="${1}"
     local _can_copy=0
     local _scan_options=0
     local _opts_len=${#__MODULE_OPTIONS}
@@ -91,7 +103,34 @@ ${line}"
 
     _TEMPLATES["${_module_name},${_optional}"]="${_module_content}
 "
+}
+
+read_modules(){
+  # shellcheck disable=SC2094
+  echo "Reading global modules at \"${TPL_DIR}\" ..."
+  for f in "${TPL_DIR}/"*; do
+    local _module="$(basename "$f")"
+    echo -n " - ${_module}"
+    proccess_module "${f}"
+    echo
   done
+
+
+  if [[ -d "${TPL_LINK_DIR}" ]]; then
+    echo "Reading private modules at \"${TPL_LINK_DIR}\" ..."
+    for f in "${TPL_LINK_DIR}/"*; do
+      local _module="$(basename "$f")"
+      echo -n " - ${_module}"
+      if module_exists "${_module}"; then
+        echo "  // already loaded, skipping !!"
+        continue
+      fi
+      proccess_module "${f}"
+      echo
+    done
+  else 
+    echo "Private modules at \"${TPL_LINK_DIR}\" doesn't exists ..." 
+  fi
 }
 
 generate_template(){
@@ -115,15 +154,20 @@ number_of_lines(){
   echo -n ${#array[@]}
 }
 
+# Exit codes:
+# - 0 Update file
+# - 1 Init new files
 update_file(){
   local _file="${1}"
   local _template="$2"
   local _can_copy=1
+  local _exit_code=0
   mapfile -t _content <<< "$(<"${_file}")"
 
   for line in "${_content[@]}"; do
     if [[ "${line}" == "# ${__TEMPLATE_PLACEHOLDER}" ]]; then
       echo "${_template}"
+      _exit_code=1
       continue
     fi
 
@@ -135,6 +179,7 @@ update_file(){
     }
     [[ ${_can_copy} -eq 1 ]] && echo "${line}"
   done
+  return ${_exit_code}
 }
 
 update_files(){
@@ -142,24 +187,36 @@ update_files(){
   for f in "${REPLACE_DIR}/"*; do
     [[ -d "${f}" ]] && continue
 
-    echo "Updating file: $(basename "${f}") ..."
-    local update_content="$(update_file "${f}" "${_template}")"
+    local update_content; update_content="$(update_file "${f}" "${_template}")"
+    local _ret=$?
+
+    if [[ $_ret -eq 0 ]]; then 
+      echo "Updating file: $(basename "${f}") ..."
+    elif [[ $_ret -eq 1 ]]; then
+      echo "Initial. file: $(basename "${f}") ..."
+    fi
+    
     echo -n "${update_content}" > "${f}"
   done
 }
 
 # shellcheck disable=SC1091
-. "${DIR}/src/includes/core.sh"
+. "${DIR}/modules/core.sh"
 
 # ========== [MAIN SCRIPT] ===============
 
-echo -n "Building modules list ... "
-read_modules
-echo "${#_TEMPLATES[@]} modules"
+main() {
+  __echo Scaning for modules ...
+  read_modules
+  __echo "Loaded ${#_TEMPLATES[@]} modules in total" 
 
-echo -n "Generate template ... "
-IFS= TEMPLATE=$(generate_template)
+  __echo -n "Generate template ... "
+  IFS= TEMPLATE=$(generate_template)
+  IFS= __lines=$(number_of_lines "${TEMPLATE}")
+  echo "${__lines} lines"
 
-IFS= __lines=$(number_of_lines "${TEMPLATE}")
-echo "${__lines} lines"
-update_files "${TEMPLATE}"
+  __echo "Updating files ..."
+  update_files "${TEMPLATE}"
+}
+
+main
