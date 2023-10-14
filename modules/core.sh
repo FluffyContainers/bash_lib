@@ -64,7 +64,7 @@ __command(){
 #}
 # __run -s -t "Updating" -f "_test" update_dirs
 __run(){
-  local _default=1 _f="" _silent=0 _show_output=0 _custom_title="" _func=""
+  local _default=1 _f="" _silent=0 _show_output=0 _custom_title="" _func="" _attach=0
 
   # scan for arguments
   while true; do
@@ -72,13 +72,24 @@ __run(){
     [[ "${1^^}" == "-T" ]] && { _custom_title="${2}"; shift; shift; _default=0; }
     [[ "${1^^}" == "-F" ]] && { _func="${2}"; shift; shift; }
     [[ "${1^^}" == "-O" ]] && { _show_output=1; shift; }
+    [[ "${1^^}" == "-A" ]] && { _attach=1; shift; }
 
-    [[ "${1:0:1}" != "-" ]] && break || true
+    [[ "${1:0:1}" != "-" ]] && break
   done
 
   [[ "${_custom_title}" != "" ]] && {
     echo -ne "${_custom_title} "
-    [[ ${_silent} -eq 0 ]] && echo -ne "${_COLOR[GRAY]} | $*" || true
+    [[ ${_silent} -eq 0 ]] && echo -ne "${_COLOR[GRAY]} | $*"
+  }
+
+  [[ ${_attach} -eq 1 ]] && {
+    echo
+    echo -e "${_COLOR[GRAY]}--------Attaching${_COLOR[RESET]}"
+    "$@" 
+    local n=$?
+    echo -e "${_COLOR[GRAY]}----------Summary"
+    echo -e "${_COLOR[DARKPINK]}[>>>>]${_COLOR[GRAY]} Exit code: ${n} ${_COLOR[RESET]}"
+    return ${n}
   }
   
   local _out; _out=$("$@" 2>&1)
