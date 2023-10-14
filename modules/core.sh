@@ -54,10 +54,12 @@ __command(){
   fi
 }
 
-# __run [-t "command caption" [-s] [-f "echo_func_name"]] command
+# __run [-t "command caption" [-s] [-f "echo_func_name"]] [-a] [-o] command
 # -t "command caption" - instead of command itself, show the specified text
 # -s - if provided, command itself would be hidden from the output
 # -f - if provided, output of function would be displayed in title
+# -a - attach mode, command would be execute in curent context
+# -o - always show output of the command
 # Samples:
 # _test(){
 #  echo "lol" 
@@ -76,6 +78,8 @@ __run(){
 
     [[ "${1:0:1}" != "-" ]] && break
   done
+
+  # [[ "${DEBUG}" == "1" ]] &&  echo -e "${_COLOR[GRAY]}[DEBUG] $*${_COLOR[RESET]}"
 
   [[ "${_custom_title}" != "" ]] && {
     echo -ne "${_custom_title} "
