@@ -29,6 +29,7 @@ declare -A _COLOR=(
     [WARN]="\033[38;05;178m"
     [OK]="\033[38;05;40m"
     [GRAY]="\033[38;05;245m"
+    [DARKPINK]="\033[38;05;127m"
     [RESET]="\033[m"
 )
 
@@ -53,32 +54,52 @@ __command(){
   fi
 }
 
-# __run [-t "command caption" [-s]] command
+# __run [-t "command caption" [-s] [-f "echo_func_name"]] command
 # -t "command caption" - instead of command itself, show the specified text
 # -s - if provided, command itself would be hidden from the output
+# -f - if provided, output of function would be displayed in title
+# Samples:
+# _test(){
+#  echo "lol" 
+#}
+# __run -s -t "Updating" -f "_test" update_dirs
 __run(){
-  local _default=1
-  local _f=""
+  local _default=1 _f="" _silent=0 _show_output=0 _custom_title="" _func=""
 
-  [[ "${1^^}" == "-T" ]] && {
-    local _title="${2}"
-    shift; shift; 
-    echo -ne "${_title} "
-    [[ "${1^^}" != "-S" ]] && echo -ne "${_COLOR[GRAY]} | $*" || shift
-    local _default=0
-  }
-  [[ "${1^^}" == "-F" ]] && {
-    local _f="${2}"
-    shift;shift;
-  }
+  # scan for arguments
+  while true; do
+    [[ "${1^^}" == "-S" ]] && { _silent=1; shift; }
+    [[ "${1^^}" == "-T" ]] && { _custom_title="${2}"; shift; shift; _default=0; }
+    [[ "${1^^}" == "-F" ]] && { _func="${2}"; shift; shift; }
+    [[ "${1^^}" == "-O" ]] && { _show_output=1; shift; }
 
-  "$@" 1>/dev/null 2>/dev/null
+    [[ "${1:0:1}" != "-" ]] && break || true
+  done
+
+  [[ "${_custom_title}" != "" ]] && {
+    echo -ne "${_custom_title} "
+    [[ ${_silent} -eq 0 ]] && echo -ne "${_COLOR[GRAY]} | $*" || true
+  }
+  
+  local _out; _out=$("$@" 2>&1)
   local n=$?
 
-  [[ ! -z ${_f} ]] && echo -ne " | $(${_f})"
+
+  [[ -n ${_func} ]] && echo -ne " | $(${_f})"
   [[ ${_default} -eq 0 ]] &&  echo -ne "${_COLOR[GRAY]} ... [" || echo -ne "${_COLOR[INFO]}[EXEC] ${_COLOR[GRAY]}$* -> ["
   
   [[ $n -eq 0 ]] && echo -e "${_COLOR[OK]}ok${_COLOR[GRAY]}]${_COLOR[RESET]}" || echo -e "${_COLOR[ERROR]}fail[#${n}]${_COLOR[GRAY]}]${_COLOR[RESET]}"
+  [[ $n -ne 0 ]] && [[ ${_silent} -eq 0 ]] || [[ ${_show_output} -eq 1 ]] && {
+    local _accent_color="DARKPINK"
+    [[ ${n} -ne 0 ]] && _accent_color="ERROR"
+    IFS=$'\n' mapfile -t out_lines <<< "${_out}"
+    echo -e "${_COLOR[${_accent_color}]}[>>>>]${_COLOR[GRAY]} ${out_lines[0]}"
+    
+    for line in "${out_lines[@]:1}"; do
+        echo -e "${_COLOR[${_accent_color}]}     | ${_COLOR[GRAY]}${line}"
+    done
+    echo -e "${_COLOR[RESET]}"
+  }
   return ${n}
   }
 
