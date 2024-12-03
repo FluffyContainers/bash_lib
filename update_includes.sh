@@ -40,8 +40,8 @@ LINK_DIR=$(cd -P "$( dirname "${BASH_SOURCE[0]}" )" 1>/dev/null 2>&1 && pwd)
 
 
 TPL_DIR="${DIR}/modules"
-TPL_LINK_DIR="${LINK_DIR}/src/modules"
-REPLACE_DIR="${LINK_DIR}/src"
+TPL_LINK_MARKER=".module"
+REPLACE_MARKER=".replace"
 
 __START_INCLUDE="[template] !!! DO NOT MODIFY CODE INSIDE. INSTEAD USE apply-teplate.sh script to update template !!!"
 __END_INCLUDE="[template] [end] !!! DO NOT REMOVE ANYTHING INSIDE, INCLUDING CURRENT LINE !!!"
@@ -116,9 +116,22 @@ read_modules(){
   done
 
 
-  if [[ -d "${TPL_LINK_DIR}" ]]; then
-    echo "Reading private modules at \"${TPL_LINK_DIR}\" ..."
-    for f in "${TPL_LINK_DIR}/"*; do
+  declare -a module_array
+  __echo "Resolve local modulse path..."
+  while IFS= read -r -d '' file; do
+    local _path=$(dirname "${file}")
+    module_array+=("${_path}")
+    echo " - ${_path}"
+  done < <(find "${LINK_DIR}" -type f -name "${TPL_LINK_MARKER}" -print0 )
+
+  if [[ ${#module_array[@]} -eq 0 ]]; then
+    __echo "warn" "No local modules found. Please make sure, that the target folder contains empty ${TPL_LINK_MARKER} file."
+    return 
+  fi
+
+  for _path in "${module_array[@]}"; do
+    echo "Reading private modules at \"${_path}\" ..."
+    for f in "${_path}/"*; do
       local _module="$(basename "$f")"
       echo -n " - ${_module}"
       if module_exists "${_module}"; then
@@ -128,9 +141,7 @@ read_modules(){
       proccess_module "${f}"
       echo
     done
-  else 
-    echo "Private modules at \"${TPL_LINK_DIR}\" doesn't exists ..." 
-  fi
+  done
 }
 
 generate_template(){
@@ -182,21 +193,48 @@ update_file(){
   return ${_exit_code}
 }
 
+
 update_files(){
-  local _template="$1"
-  for f in "${REPLACE_DIR}/"{.*,*}; do
+  local _target_dir="$1"
+  local _template="$2"
+
+  for f in "${_target_dir}/"{.*,*}; do
     [[ -d "${f}" ]] && continue
+    local _file_name="$(basename "${f}")"
+
+    [[ "${_file_name}" == "${REPLACE_MARKER}" ]] && continue 
 
     local update_content; update_content="$(update_file "${f}" "${_template}")"
     local _ret=$?
 
     if [[ $_ret -eq 0 ]]; then 
-      echo " - Updating file: $(basename "${f}")"
+      echo " - Updating file: ${_file_name}"
     elif [[ $_ret -eq 1 ]]; then
-      echo " - Initial. file: $(basename "${f}")"
+      echo " - Initial. file: ${_file_name}"
     fi
     
     echo -n "${update_content}" > "${f}"
+  done
+}
+
+resolve_paths_and_replace(){
+  local _template="$1"
+  declare -a replace_array
+  __echo "Resolve processing paths..."
+  while IFS= read -r -d '' file; do
+    local _path=$(dirname "${file}")
+    replace_array+=("${_path}")
+    echo " - ${_path}"
+  done < <(find "${LINK_DIR}" -type f -name "${REPLACE_MARKER}" -print0 )
+
+  if [[ ${#replace_array[@]} -eq 0 ]]; then
+    __echo "warn" "No processing targets found. Please make sure, that the target folders have ${REPLACE_MARKER} file created in them."
+    return 
+  fi
+
+  for _path in "${replace_array[@]}"; do
+      __echo "Updating ${_path} ..."
+      update_files "${_path}" "${_template}"
   done
 }
 
@@ -206,7 +244,7 @@ update_files(){
 # ========== [MAIN SCRIPT] ===============
 
 main() {
-  __echo Scaning for modules ...
+  __echo "Scaning for modules ..."
   read_modules
   __echo "Loaded ${#_TEMPLATES[@]} modules in total" 
 
@@ -215,8 +253,7 @@ main() {
   IFS= __lines=$(number_of_lines "${TEMPLATE}")
   echo "${__lines} lines"
 
-  __echo "Updating files ..."
-  update_files "${TEMPLATE}"
+  resolve_paths_and_replace "${TEMPLATE}"
 }
 
 main
