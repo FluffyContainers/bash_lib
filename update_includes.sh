@@ -266,9 +266,9 @@ update_files(){
     local _ret=$?
 
     case "${_ret}" in 
-      0) echo " - ${_file_name} updated. Written ${_num_lines} lines.";;
-      1) echo " - ${_file_name} initialized. Written ${_num_lines} lines.";;
-      2) echo " - ${_file_name} not modified";;
+      0) echo " - ${_file_name} updated.";;
+      1) echo " - ${_file_name} initialized.";;
+      # 2) echo " - ${_file_name} not modified";;
     esac    
     echo -n "${update_content}" > "${f}"
   done
