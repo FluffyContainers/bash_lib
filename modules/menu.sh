@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 # Copyright 2022 FluffyContainers
 # GitHub: https://github.com/FluffyContainers
 
@@ -18,7 +16,6 @@
 # limitations under the License.
 
 # [start]
-# options: optional
 
 
 moveCursor() {

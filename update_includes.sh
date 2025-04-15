@@ -19,11 +19,18 @@
 
 
 # How to use first time: 
-# - create file in "src" folder
-# - add line with content "# [template]"
+# - create file ".replace" in folder, content of which would be processed
+# - add content below to the file:
+#   # [template]
+#   # include: core
 # - execute update_includes.sh file
 # ...
-# - after first execution, files would be automaticaly updated with any new script execution
+# - after first execution, files would be automaticaly updated with any update execution
+
+# Local modules could be defined in a same way as preocessing dir:
+# - put file marker to the folder with name ".module"
+# - basically it's all, now these files could be used in includes by their names without extension 
+
 
 __dir(){
   local __source="${BASH_SOURCE[0]}"
@@ -43,15 +50,19 @@ TPL_DIR="${DIR}/modules"
 TPL_LINK_MARKER=".module"
 REPLACE_MARKER=".replace"
 
-__START_INCLUDE="[template] !!! DO NOT MODIFY CODE INSIDE. INSTEAD USE apply-teplate.sh script to update template !!!"
-__END_INCLUDE="[template] [end] !!! DO NOT REMOVE ANYTHING INSIDE, INCLUDING CURRENT LINE !!!"
 
-__START_BLOCK="[start]"
-__END_BLOCK="[end]"
-__TEMPLATE_PLACEHOLDER="[template]"
-__MODULE_OPTIONS="options:"
+declare -A __CONST=(
+  [START_INCLUDE]="[template] !!! DO NOT MODIFY CODE INSIDE, ON NEXT UPDATE CODE WOULD BE REPLACED !!!"
+  [INCLUDE]="include:"
+  [END_INCLUDE]="[template:end] !!! DO NOT REMOVE ANYTHING INSIDE, INCLUDING CURRENT LINE !!!"
 
-# key format -> [module_name,is_optional] = module_content
+  [START_BLOCK]="[start]"
+  [END_BLOCK]="[end]"
+
+  [TEMPLATE_PLACEHOLDER]="[template]"
+)
+
+# key format -> [module_name] = module_content
 declare -A _TEMPLATES=()
 
 
@@ -64,44 +75,34 @@ module_exists(){
   return 1
 }
 
+# Read modules to the BASH KeyValue Map by it base name
 proccess_module(){
     local f="${1}"
     local _can_copy=0
-    local _scan_options=0
     local _opts_len=${#__MODULE_OPTIONS}
     
     local _module_name=$(basename "${f}")
+    local _module_name=${_module_name%.*}
     local _module_content=""
     # options
     local _optional=0
 
     while IFS= read -rs line; do
-      [[ "${line}" == "# ${__START_BLOCK}" ]] && {
+      [[ "${line}" == "# ${__CONST[START_BLOCK]}" ]] && {
         local _can_copy=1
         local _scan_options=1
         continue
       }
 
-      
-      [[ _scan_options -eq 1 ]] && {
-        [[ "${line:2:${_opts_len}}" == "${__MODULE_OPTIONS}" ]] && {
-                # local _options=(${line:$((_opts_len + 2))})
-                IFS=" " read -r -a _options <<< "${line:$((_opts_len + 2))}"
-                for opt in "${_options[@]}"; do 
-                  [[ "${opt}" == "optional" ]] && local _optional=1
-                done
-                continue
-        } || local _scan_options=0
-      } 
 
-      [[ "${line}" == "# ${__END_BLOCK}" ]] && local _can_copy=0
+      [[ "${line}" == "# ${__CONST[END_BLOCK]}" ]] && local _can_copy=0
       [[ ${_can_copy} -eq 0 ]] && continue
 
       local _module_content="${_module_content}
 ${line}"
     done < "${f}"
 
-    _TEMPLATES["${_module_name},${_optional}"]="${_module_content}
+    _TEMPLATES["${_module_name}"]="${_module_content}
 "
 }
 
@@ -117,7 +118,7 @@ read_modules(){
 
 
   declare -a module_array
-  __echo "Resolve local modulse path..."
+  __echo "Resolve local modules path..."
   while IFS= read -r -d '' file; do
     local _path=$(dirname "${file}")
     module_array+=("${_path}")
@@ -144,50 +145,108 @@ read_modules(){
   done
 }
 
-generate_template(){
-  echo "# ${__START_INCLUDE}"
 
-  # shellcheck disable=SC2094
-  for tpl in "${!_TEMPLATES[@]}"; do 
-    IFS=',' read -r -a _options <<< "${tpl}"
-
-    [[ ${_options[1]} -eq 1 ]] && continue
-    echo "# [module: ${_options[0]}]"
-    echo "${_TEMPLATES[${tpl}]}"
+# helper function
+# $1: comma-separated list of modules
+# $2: name of associative array to fill (as a nameref)
+build_include_set() {
+  local _include_modules="$1"
+  local -n _set_ref="$2"
+  IFS=',' read -ra _mods <<< "$_include_modules"
+  for mod in "${_mods[@]}"; do
+    mod="$(echo "$mod" | xargs)" # trim whitespace
+    [[ -n "$mod" ]] && _set_ref["$mod"]=1
   done
-
-  echo "# ${__END_INCLUDE}"
 }
 
+# $1: coma-separated list string list of modules to generate content of
+generate_template(){
+  # parse include modules list "mod1,mod2 to an Map"
+  local _include_modules="$1"
+  IFS=',' read -ra _mods <<< "$_include_modules"
 
-number_of_lines(){
-  mapfile -t array <<< "$1"
-  echo -n ${#array[@]}
+  echo "# ${__CONST[START_INCLUDE]}"
+  echo "# ${__CONST[INCLUDE]} ${_include_modules}"
+  echo ""
+  IFS=',' read -ra _modules <<< "${_include_modules}"
+
+  # shellcheck disable=SC2094
+
+  for mod in "${_mods[@]}"; do
+    if [[ -n "${_TEMPLATES[${mod}]}" ]]; then
+      echo "# [module: ${mod}]"
+      echo "${_TEMPLATES[${mod}]}"
+    else 
+      echo "# [module: ${mod}] NOT FOUND or not loaded. Check that the include are in a search path"
+    fi
+  done
+
+  echo "# ${__CONST[END_INCLUDE]}"
+}
+
+generate_template_empty(){
+    echo "# ${__CONST[START_INCLUDE]}"
+    echo "# !! No include modules found, please use '# ${__CONST[INCLUDE]} mod1,mod2,etc' directive on the next line after ${__CONST[TEMPLATE_PLACEHOLDER]}"
+    echo "# !! List of discovered modules to include:"
+    for mod in "${!_TEMPLATES[@]}"; do
+      echo "# !! - ${mod}"
+    done
+    echo "# ${__CONST[END_INCLUDE]}"
 }
 
 # Exit codes:
 # - 0 Update file
 # - 1 Init new files
+# - 2 Not modified
 update_file(){
   local _file="${1}"
-  local _template="$2"
   local _can_copy=1
-  local _exit_code=0
+  local _exit_code=2
+  local _template=""
+  local _include_modules=""
+
   mapfile -t _content <<< "$(<"${_file}")"
 
-  for line in "${_content[@]}"; do
-    if [[ "${line}" == "# ${__TEMPLATE_PLACEHOLDER}" ]]; then
+  for ((i=0; i<${#_content[@]}; i++)); do
+    line="${_content[$i]}"
+
+
+    if [[ "${line}" == "# ${__CONST[TEMPLATE_PLACEHOLDER]}" ]]; then
+      next_line="${_content[$((i+1))]}"
+      if [[ "${next_line}" =~ ^#\ ${__CONST[INCLUDE]}\ (.*)$ ]]; then
+        i=$((i + 1))
+        _include_modules="${BASH_REMATCH[1]}"
+        _template=$(generate_template "${_include_modules}")
+      else 
+        _template=$(generate_template_empty)
+      fi
+      echo "${_template}"
+       
+      _exit_code=1
+      continue
+    fi
+
+    if [[ "${line}" == "# ${__CONST[START_INCLUDE]}" ]]; then 
+      local _can_copy=0
+      next_line="${_content[$((i+1))]}"
+      if [[ "${next_line}" =~ ^#\ ${__CONST[INCLUDE]}\ (.*)$ ]]; then
+        i=$((i + 1))
+        _include_modules="${BASH_REMATCH[1]}"
+      fi
+      continue
+    fi
+
+    if [[ "${line}" == "# ${__CONST[END_INCLUDE]}" ]]; then
+      local _can_copy=1
+      if [[ -n ${_include_modules} ]]; then
+        _template=$(generate_template "${_include_modules}")
+      fi
+
       echo "${_template}"
       _exit_code=1
       continue
     fi
 
-    [[ "${line}" == "# ${__START_INCLUDE}" ]] && local _can_copy=0
-    [[ "${line}" == "# ${__END_INCLUDE}" ]] && {
-      local _can_copy=1
-      echo "${_template}"
-      continue
-    }
     [[ ${_can_copy} -eq 1 ]] && echo "${line}"
   done
   return ${_exit_code}
@@ -196,7 +255,6 @@ update_file(){
 
 update_files(){
   local _target_dir="$1"
-  local _template="$2"
 
   for f in "${_target_dir}/"{.*,*}; do
     [[ -d "${f}" ]] && continue
@@ -204,23 +262,21 @@ update_files(){
 
     [[ "${_file_name}" == "${REPLACE_MARKER}" ]] && continue 
 
-    local update_content; update_content="$(update_file "${f}" "${_template}")"
+    local update_content; update_content="$(update_file "${f}")"
     local _ret=$?
 
-    if [[ $_ret -eq 0 ]]; then 
-      echo " - Updating file: ${_file_name}"
-    elif [[ $_ret -eq 1 ]]; then
-      echo " - Initial. file: ${_file_name}"
-    fi
-    
+    case "${_ret}" in 
+      0) echo " - ${_file_name} updated. Written ${_num_lines} lines.";;
+      1) echo " - ${_file_name} initialized. Written ${_num_lines} lines.";;
+      2) echo " - ${_file_name} not modified";;
+    esac    
     echo -n "${update_content}" > "${f}"
   done
 }
 
 resolve_paths_and_replace(){
-  local _template="$1"
   declare -a replace_array
-  __echo "Resolve processing paths..."
+  __echo "Resolving replace paths..."
   while IFS= read -r -d '' file; do
     local _path=$(dirname "${file}")
     replace_array+=("${_path}")
@@ -228,13 +284,13 @@ resolve_paths_and_replace(){
   done < <(find "${LINK_DIR}" -type f -name "${REPLACE_MARKER}" -print0 )
 
   if [[ ${#replace_array[@]} -eq 0 ]]; then
-    __echo "warn" "No processing targets found. Please make sure, that the target folders have ${REPLACE_MARKER} file created in them."
+    __echo "warn" "No replace targets found. Please make sure, that the target folders have ${REPLACE_MARKER} file created in directories included to processing."
     return 
   fi
 
   for _path in "${replace_array[@]}"; do
       __echo "Updating ${_path} ..."
-      update_files "${_path}" "${_template}"
+      update_files "${_path}"
   done
 }
 
@@ -248,12 +304,7 @@ main() {
   read_modules
   __echo "Loaded ${#_TEMPLATES[@]} modules in total" 
 
-  __echo -n "Generate template ... "
-  IFS= TEMPLATE=$(generate_template)
-  IFS= __lines=$(number_of_lines "${TEMPLATE}")
-  echo "${__lines} lines"
-
-  resolve_paths_and_replace "${TEMPLATE}"
+  resolve_paths_and_replace
 }
 
 main
