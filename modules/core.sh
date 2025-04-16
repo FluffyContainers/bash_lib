@@ -34,16 +34,6 @@ declare -A _COLOR=(
     [RESET]="\033[m"
 )
 
-# deprecated, should be overseeded by __run with porting functionality and letting it be simple as __run
-__command(){
-  local title="$1"
-  [[ $2 -eq 1 ]] && local status="-s" || local status=""
-    # 0 or 1
-  shift;shift
-
-  __run "${status}" -t "${title}" "$@"
-}
-
 # __run [-t "command caption" [-s] [-f "echo_func_name"]] [-a] [-o] [--stream] [--sudo] command
 # -t       - instead of command itself, show the specified text
 # -s       - if provided, command itself would be hidden from the output
@@ -156,51 +146,6 @@ __ask() {
       return 1
     fi
     return 0
-}
-
-cuu1(){
-  echo -e "\E[A"
-}
-
-# https://stackoverflow.com/questions/4023830/how-to-compare-two-strings-in-dot-separated-version-format-in-bash
-# Results: 
-#          0 => =
-#        1 => >
-#          2 => <
-# shellcheck disable=SC2206
-__vercomp () {
-    [[ "$1" == "$2" ]] && return 0 ; local IFS=. ; local i ver1=($1) ver2=($2)
-    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++));  do ver1[i]=0;  done
-    for ((i=0; i<${#ver1[@]}; i++)); do
-        [[ -z ${ver2[i]} ]] && ver2[i]=0
-        ((10#${ver1[i]} > 10#${ver2[i]})) &&  return 1
-        ((10#${ver1[i]} < 10#${ver2[i]})) &&  return 2
-    done
-    return 0
-}
-
-__urldecode() { : "${*//+/ }"; echo -e "${_//%/\\x}"; }
-
-__download() {
-  [[ "${1^^}" == "-L" ]] && { local _follow_link="-L"; shift; } || local _follow_link=""
-  local _url="$1"
-  local _file=$(__urldecode "${_url##*/}")
-  [[ -z $2 ]] && local _destination="./" || local _destination="$2"
-  [[ "${_destination:0-1}" == "/" ]] && local _dest_path="${_destination}/${_file}" || local _dest_path="${_destination}"
-
-  __echo "Downloading file ${_file}: "
-  # shellcheck disable=SC2086
-  curl -f ${_follow_link} --progress-bar "${_url}" -o "${_dest_path}" 2>&1
-  local _ret=$?
-
-  [[ ${_ret} -eq 0 ]] && {
-    echo -ne "\E[A"; echo -ne "\033[0K\r"; echo -ne "\E[A"
-    __echo "Downloading file ${_file}: [${_COLOR[OK]}ok${_COLOR[RESET]}]"
-  } || {
-    echo -ne "\E[A"; echo -ne "\033[0K\r"; echo -ne "\E[A";echo -ne "\033[0K\r"; echo -ne "\E[A";
-    __echo "Downloading file ${_file}: [${_COLOR[ERROR]}fail ${_ret}${_COLOR[RESET]}]"
-  }
-  return ${_ret} 
 }
 
 # [end]
