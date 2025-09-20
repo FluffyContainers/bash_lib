@@ -138,12 +138,51 @@ __echo() {
   echo -${_new_line}e "${_COLOR[${_lvl}]}[${_lvl}]${_COLOR[RESET]} $*"
 }
 
+# __ask [-k] [-f VAR_NAME] "Some title"
+# -k          - if provided, single key press would be used instead of asking for input
+# -f VAR_NAME - if provided, value of the variable would be used instead of asking for input (0/1)
+# -d SECONDS  - if provided, will wait for specified amount of seconds before asking for input
 __ask() {
-    local _title="${1}"
-    [[ -n ${FORCE} ]] && [[ "${FORCE}" == "1" ]] && { echo "${1} (y/N): y (env variable)"; return 0; } || read -rep "${1} (y/N): " answer < /dev/tty
-    if [[ "${answer}" != "y" ]]; then
-      __echo "error" "Action cancelled by the user"
-      return 1
+    local _key_press=0
+    local _force_name=""
+    local _delay=0
+
+    while [[ "${1::1}" == "-" ]]; do
+        case "${1,,}" in
+            -k) _key_press=1; shift ;;
+            -f) _force_name="${2}"; shift 2 ;;
+            -d) _delay="${2}"; shift 2 ;;
+            *)  shift ;;
+        esac
+    done
+    local _title="$*"
+
+    if [[ -n "${_force_name}" && "${!_force_name}" == "1" ]]; then
+        echo "${_title} (y/N): y (forced)"
+        return 0
+    fi
+
+    local answer
+    local prompt="${_title} (y/N): "
+
+    if [[ ${_delay} -gt 0 ]]; then
+      for i in $(seq "${_delay}" -1 1); do
+          echo -ne "\r${prompt} ${_COLOR[GRAY]}answer in ${_COLOR[RED]}${i}${_COLOR[GRAY]} second(s).. ${_COLOR[RESET]}"
+          sleep 1
+      done
+      echo -ne "\033[2K\r"
+    fi
+
+    if [[ ${_key_press} -eq 1 ]]; then
+        read -r -n 1 -p "${prompt}" answer < /dev/tty
+        echo
+    else
+        read -r -ep "${prompt}" answer < /dev/tty
+    fi
+
+    if [[ "${answer,,}" != "y" ]]; then
+        __echo "error" "Action cancelled by the user"
+        return 1
     fi
     return 0
 }
