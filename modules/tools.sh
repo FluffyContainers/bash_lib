@@ -19,14 +19,13 @@
 
 # shellcheck disable=SC2155,SC2015
 
-# __vercomp: Compare two version strings in dot-separated format
-# Inputs:
-#   $1 - First version string (e.g., "1.2.3")
-#   $2 - Second version string (e.g., "1.3.0")
-# Results:
-#   0 - Versions are equal ($1 == $2)
-#   1 - First version is greater ($1 > $2)
-#   2 - First version is less ($1 < $2)
+# __vercomp version1 version2
+# Compare two version strings in dot-separated format
+#
+#    version1 - first version string (e.g., "1.2.3")
+#    version2 - second version string (e.g., "1.3.0")
+#
+# Results: Returns 0 if equal, 1 if version1 > version2, 2 if version1 < version2
 # shellcheck disable=SC2206
 __vercomp () {
     [[ "$1" == "$2" ]] && return 0 ; local IFS=. ; local i ver1=($1) ver2=($2)
@@ -39,27 +38,33 @@ __vercomp () {
     return 0
 }
 
-# __urldecode: Decode URL-encoded string
-# Inputs:
-#   $* - URL-encoded string (e.g., "hello%20world")
-# Results:
-#   Outputs decoded string to stdout (e.g., "hello world")
+# __urldecode url_string
+# Decode URL-encoded string
+#
+#    url_string - URL-encoded string (e.g., "hello%20world")
+#
+# Results: Outputs decoded string to stdout (e.g., "hello world")
 __urldecode() { : "${*//+/ }"; echo -e "${_//%/\\x}"; }
 
+# __clear_progress
+# Clear current line and move cursor up one line
+#
+# Results: Clears terminal line using ANSI escape codes
 __clear_progress(){ printf '\033[A\033[0K\r'; }
 
-# __download: Download file from URL with progress bar
-# Inputs:
-#   -L         - (optional) Follow redirects
-#   $1         - URL to download
-#   $2         - (optional) Destination path (default: ./)
-#                If ends with /, appends filename from URL
-# Results:
-#   0 - Download succeeded
-#   non-zero - Download failed (curl/aria2c exit code)
-# Notes:
-#   Uses aria2c if available, falls back to curl
-#   Shows progress bar and status message
+# __download [-L] url [destination]
+# Download file from URL with progress bar
+#
+#    -L          - follow redirects (optional)
+#    url         - URL to download
+#    destination - destination path (default: ./), if ends with / appends filename from URL (optional)
+#
+# Results: Returns 0 on success, non-zero on failure (curl/aria2c exit code)
+#
+# Samples:
+#   __download "https://example.com/file.zip"
+#   __download -L "https://example.com/file.zip" "/tmp/"
+#   __download "https://example.com/file.zip" "/tmp/myfile.zip"
 __download() {
   [[ "${1^^}" == "-L" ]] && { local _follow_link="-L"; shift; } || local _follow_link=""
   local _url="$1"

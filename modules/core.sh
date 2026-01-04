@@ -24,18 +24,22 @@
 # =====================
 
 # __run [-t "command caption" [-s] [-f "echo_func_name"]] [-a] [-o] [--stream] [--sudo] command
-# -t       - instead of command itself, show the specified text
-# -s       - if provided, command itself would be hidden from the output
-# -f       - if provided, output of function would be displayed in title
-# -a       - attach mode, command would be execute in curent context
-# -o       - always show output of the command
-# --stream - read application line-per-line and proxy output to stdout. In contrary to "-a", output are wrapped. 
-# --sudo   - trying to exeute command under elevated permissions, when required. Forcing "-a" mode for sudo password input 
+# Execute command with tracking it's status
+#
+#    -t       - instead of command itself, show the specified text
+#    -s       - if provided, command itself would be hidden from the output
+#    -f       - if provided, output of function would be displayed in title
+#    -a       - attach mode, command would be execute in curent context
+#    -o       - always show output of the command
+#    --stream - read application line-per-line and proxy output to stdout. In contrary to "-a", output are wrapped.
+#    --sudo   - trying to exeute command under elevated permissions, when required. Forcing "-a" mode for sudo password input
+#
 # Samples:
-# _test(){
-#  echo "lol" 
-#}
-# __run -s -t "Updating" -f "_test" update_dirs
+#   _test(){
+#     echo "lol"
+#   }
+#
+#   __run -s -t "Updating" -f "_test" update_dirs
 __run(){
   local _default=1 _f="" _silent=0 _show_output=0 _custom_title="" _func="" _attach=0 _stream=0 _sudo=0
 
@@ -117,6 +121,12 @@ __run(){
   return "${n}"
 }
 
+# __echo [-n] [INFO|ERROR|WARN] message
+# Output formatted message with level indicator and color
+#
+#    -n              - suppress newline at the end
+#    INFO|ERROR|WARN - message level (default: INFO)
+#    message         - text to display
 __echo() {
   local _lvl="INFO"
   local _new_line=""
@@ -127,10 +137,15 @@ __echo() {
   echo -${_new_line}e "${_COLOR[${_lvl}]}[${_lvl}]${_COLOR[RESET]} $*"
 }
 
-# __ask [-k] [-f VAR_NAME] "Some title"
-# -k          - if provided, single key press would be used instead of asking for input
-# -f VAR_NAME - if provided, value of the variable would be used instead of asking for input (0/1)
-# -d SECONDS  - if provided, will wait for specified amount of seconds before asking for input
+# __ask [-k] [-f VAR_NAME] [-d SECONDS] "prompt text"
+# Prompt user for yes/no confirmation with various input modes
+#
+#    -k          - single key press mode instead of waiting for Enter
+#    -f VAR_NAME - if variable is set to 1, automatically return yes (0/1)
+#    -d SECONDS  - delay before showing prompt with countdown
+#    prompt text - question to ask the user
+#
+# Results: Returns 0 if user answers yes, 1 otherwise
 __ask() {
     local _key_press=0
     local _force_name=""

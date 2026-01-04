@@ -42,8 +42,16 @@ __symlink_name(){ # usage: APP_SYMLINK_NAME="$(__symlink_name)" -> link.sh or em
     [[ -h "${src}" ]] && echo -n "$(basename -- "${src}")" || echo -n ""
 }
 
-
+# APP_DIR
+# Absolute path to the directory containing the script
+# Resolves symlinks to get the actual script location
 APP_DIR="$(__dir)"
+
+# APP_NAME
+# Name of the actual script file (after resolving symlinks)
 APP_NAME="$(__script_name)"
+
+# APP_SYMLINK_NAME
+# Name of the symlink if script was called via symlink, empty string otherwise
 APP_SYMLINK_NAME="$(__symlink_name)"
 # [end]

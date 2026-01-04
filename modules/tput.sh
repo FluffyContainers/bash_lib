@@ -17,11 +17,17 @@
 
 # [start]
 
+# moveCursor column row
+# Move cursor to specific position on the screen
+# column - horizontal position (1-based)
+# row    - vertical position (1-based)
 moveCursor() {
     echo -ne "\033[$(($2+1));$1f"  # or tput cup "$2" "$1"
 }
 
-
+# getCurrentPos
+# Get current cursor position
+# Results: Echoes current cursor position as "column row"
 getCurrentPos(){
     local _col; local _row
     # shellcheck disable=SC2162
@@ -29,6 +35,9 @@ getCurrentPos(){
     echo "${_col} ${_row#*[}"
 }
 
+# readKey
+# Read a single key press and return its ASCII code
+# Results: Prints the ASCII decimal code of the pressed key
 readKey(){
     read -rsN 1 _key
     printf %d "'${_key}"   # %x for hex

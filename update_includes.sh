@@ -54,6 +54,7 @@ REPLACE_MARKER=".replace"
 declare -A __CONST=(
   [START_INCLUDE]="[template] !!! DO NOT MODIFY CODE INSIDE, ON NEXT UPDATE CODE WOULD BE REPLACED !!!"
   [INCLUDE]="include:"
+  [OPTS]="opts:"
   [END_INCLUDE]="[template:end] !!! DO NOT REMOVE ANYTHING INSIDE, INCLUDING CURRENT LINE !!!"
 
   [START_BLOCK]="[start]"
@@ -66,6 +67,8 @@ declare -A __CONST=(
 declare -A _TEMPLATES=()
 # key format -> [module_name] = comma-separated list of dependencies
 declare -A _MODULE_DEPS=()
+# key format -> [module_name] = doc string for comment
+declare -A _MODULE_DOCS=()
 
 
 module_exists(){
@@ -89,6 +92,8 @@ proccess_module(){
     local _module_deps=""
     # options
     local _optional=0
+    local _module_doc=""
+    declare -a _pending_doc=()
 
     while IFS= read -rs line; do
       # Check for include directive to track dependencies
@@ -106,6 +111,25 @@ proccess_module(){
       [[ "${line}" == "# ${__CONST[END_BLOCK]}" ]] && local _can_copy=0
       [[ ${_can_copy} -eq 0 ]] && continue
 
+      # Collect doc comments immediately before function definitions
+        if [[ "${line}" =~ ^#(.*)$ ]]; then
+          # Extract comment content (with or without space after #)
+          local _comment="${BASH_REMATCH[1]}"
+          [[ "${_comment}" =~ ^\ (.*)$ ]] && _comment="${BASH_REMATCH[1]}"
+          _pending_doc+=("${_comment}")
+        elif [[ "${line}" =~ ^([A-Za-z0-9_]+)\(\)\s*\{? ]] || [[ "${line}" =~ ^declare\ -A\ ([A-Za-z0-9_]+)= ]]; then
+          if [[ ${#_pending_doc[@]} -gt 0 ]]; then
+            [[ -n "${_module_doc}" ]] && _module_doc+="\n"
+            for dline in "${_pending_doc[@]}"; do
+              _module_doc+="${dline}\n"
+            done
+            _pending_doc=()
+          fi
+        elif [[ -n "${line}" && ! "${line}" =~ ^[[:space:]]*$ ]]; then
+          # Only clear pending docs if we hit actual code (not empty lines or closing braces)
+          [[ ! "${line}" =~ ^[[:space:]]*\} ]] && _pending_doc=()
+        fi
+
       local _module_content="${_module_content}
 ${line}"
     done < "${f}"
@@ -113,6 +137,8 @@ ${line}"
     _TEMPLATES["${_module_name}"]="${_module_content}
 "
     [[ -n "${_module_deps}" ]] && _MODULE_DEPS["${_module_name}"]="${_module_deps}"
+
+    [[ -n "${_module_doc}" ]] && _MODULE_DOCS["${_module_name}"]="${_module_doc}"
 }
 
 read_modules(){
@@ -194,10 +220,18 @@ resolve_deps_recursive() {
   _result_ref+=("$_mod")
 }
 
+compress_module(){
+  local _mod="$1"
+  local _content="${_TEMPLATES[${_mod}]}"
+  printf "%s" "${_content}" | gzip -c | base64 | tr -d '\n'
+}
+
 # $1: coma-separated list string list of modules to generate content of
+# $2: binary mode flag (1 => compressed eval)
 generate_template(){
   # parse include modules list "mod1,mod2 to an Map"
   local _include_modules="$1"
+  local _binary_mode="${2:-0}"
   IFS=',' read -ra _mods <<< "$_include_modules"
 
   # Track explicitly requested modules
@@ -218,17 +252,28 @@ generate_template(){
 
   echo "# ${__CONST[START_INCLUDE]}"
   echo "# ${__CONST[INCLUDE]} ${_include_modules}"
+  [[ ${_binary_mode} -eq 1 ]] && echo "# ${__CONST[OPTS]} binary"
   echo ""
 
   # shellcheck disable=SC2094
   for mod in "${_ordered_mods[@]}"; do
     if [[ -n "${_TEMPLATES[${mod}]}" ]]; then
-      if [[ -n "${_explicit[$mod]}" ]]; then
-        echo "# [module: ${mod}]"
+      local _is_dep=""
+      [[ -z "${_explicit[$mod]}" ]] && _is_dep=" (dependency)"
+
+      if [[ ${_binary_mode} -eq 1 ]]; then
+        echo "# [module: ${mod}]${_is_dep} (binary)"
+        if [[ -n "${_MODULE_DOCS[$mod]}" ]]; then
+          while IFS= read -r __docline; do
+            echo "# ${__docline}"
+          done <<< "$(printf '%b' "${_MODULE_DOCS[$mod]}")"
+        fi
+        local _blob; _blob=$(compress_module "${mod}")
+        printf 'eval "$(base64 -d <<'"'"'B64'"'"' | gunzip\n%s\nB64\n)"\n' "${_blob}"
       else
-        echo "# [module: ${mod}] (dependency)"
+        echo "# [module: ${mod}]${_is_dep}"
+        echo "${_TEMPLATES[${mod}]}"
       fi
-      echo "${_TEMPLATES[${mod}]}"
     else 
       echo "# [module: ${mod}] NOT FOUND or not loaded. Check that the include are in a search path"
     fi
@@ -257,6 +302,7 @@ update_file(){
   local _exit_code=2
   local _template=""
   local _include_modules=""
+  local _binary_mode=0
 
   mapfile -t _content <<< "$(<"${_file}")"
 
@@ -269,7 +315,13 @@ update_file(){
       if [[ "${next_line}" =~ ^#\ ${__CONST[INCLUDE]}\ (.*)$ ]]; then
         i=$((i + 1))
         _include_modules="${BASH_REMATCH[1]}"
-        _template=$(generate_template "${_include_modules}")
+        # check opts on the following line
+        next_line="${_content[$((i+1))]}"
+        if [[ "${next_line}" =~ ^#\ ${__CONST[OPTS]}\ (.*)$ ]]; then
+          i=$((i + 1))
+          [[ "${BASH_REMATCH[1],,}" =~ (^|[[:space:]])binary($|[[:space:]]) ]] && _binary_mode=1
+        fi
+        _template=$(generate_template "${_include_modules}" "${_binary_mode}")
       else 
         _template=$(generate_template_empty)
       fi
@@ -285,6 +337,14 @@ update_file(){
       if [[ "${next_line}" =~ ^#\ ${__CONST[INCLUDE]}\ (.*)$ ]]; then
         i=$((i + 1))
         _include_modules="${BASH_REMATCH[1]}"
+        # check opts after include
+        next_line="${_content[$((i+1))]}"
+        if [[ "${next_line}" =~ ^#\ ${__CONST[OPTS]}\ (.*)$ ]]; then
+          i=$((i + 1))
+          [[ "${BASH_REMATCH[1],,}" =~ (^|[[:space:]])binary($|[[:space:]]) ]] && _binary_mode=1 || _binary_mode=0
+        else
+          _binary_mode=0
+        fi
       fi
       continue
     fi
@@ -292,7 +352,7 @@ update_file(){
     if [[ "${line}" == "# ${__CONST[END_INCLUDE]}" ]]; then
       local _can_copy=1
       if [[ -n ${_include_modules} ]]; then
-        _template=$(generate_template "${_include_modules}")
+        _template=$(generate_template "${_include_modules}" "${_binary_mode}")
       fi
 
       echo "${_template}"

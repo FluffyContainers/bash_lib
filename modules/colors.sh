@@ -19,6 +19,23 @@
 
 # shellcheck disable=SC2155,SC2015
 
+# _COLOR
+# Associative array containing ANSI color codes for terminal output
+# Available color keys:
+#    INFO       - cyan color for informational messages
+#    ERROR      - red color for error messages
+#    WARN       - orange color for warning messages
+#    OK         - green color for success messages
+#    GRAY       - gray color for secondary text
+#    RED        - bright red color
+#    DARKPINK   - dark pink/purple color
+#    SELECTED   - black text on white background (for menu selection)
+#    UNSELECTED - light gray text (for unselected menu items)
+#    RESET      - reset to default terminal colors
+#
+# Samples:
+#   echo -e "${_COLOR[INFO]}This is info${_COLOR[RESET]}"
+#   echo -e "${_COLOR[ERROR]}Error occurred${_COLOR[RESET]}"
 declare -A _COLOR=(
     [INFO]="\033[38;05;39m"
     [ERROR]="\033[38;05;161m"

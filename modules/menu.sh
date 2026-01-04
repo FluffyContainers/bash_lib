@@ -55,7 +55,18 @@ drawMenu() {
     echo 
 }
 
-
+# menu items_csv menu_title
+# Display interactive menu and return selected index
+#
+#    items_csv  - comma-separated list of menu items (e.g., "Item 1,Item 2,Item 3")
+#    menu_title - title displayed at the top of the menu
+#
+# Results: Returns selected item index (0-based) via return code, 255 if cancelled (ESC pressed twice)
+#
+# Samples:
+#   menu "Option A,Option B,Option C" "Select an option"
+#   selected=$?
+#   [[ $selected -eq 255 ]] && echo "Cancelled" || echo "Selected: $selected"
 menu(){
     IFS="," read -ra menuItems <<< "$1"
     local menuTitle="$2"
