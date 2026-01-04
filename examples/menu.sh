@@ -1,21 +1,17 @@
 #!/bin/bash
 
-# Copyright 2022 FluffyContainers
-# GitHub: https://github.com/FluffyContainers
+# Minimal color palette for menu rendering
+declare -A _COLOR=(
+    [SELECTED]="\033[30;47m"   # black text on white background
+    [UNSELECTED]="\033[0;37m" # light gray text
+    [RESET]="\033[0m"
+)
 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# [template] !!! DO NOT MODIFY CODE INSIDE, ON NEXT UPDATE CODE WOULD BE REPLACED !!!
+# include: menu
 
-#     http://www.apache.org/licenses/LICENSE-2.0
+# [module: menu]
 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# [start]
 
 
 moveCursor() {
@@ -136,4 +132,24 @@ menu(){
 
     return "${pos}"
 }
-# [end]
+
+# [template:end] !!! DO NOT REMOVE ANYTHING INSIDE, INCLUDING CURRENT LINE !!!
+
+
+# Usage example: call menu with comma-separated items and read the selected index
+main(){
+    local items="Start service,Stop service,Show status,Quit"
+    IFS="," read -ra menu_list <<< "${items}"
+
+    menu "${items}" "Service menu"
+    local choice=$?
+
+    if [[ ${choice} -eq 255 ]]; then
+        echo "Menu cancelled"
+        return 1
+    fi
+
+    echo "Selected [${choice}]: ${menu_list[${choice}]}"
+}
+
+main "$@"

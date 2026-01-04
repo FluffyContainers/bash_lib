@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# Copyright 2022 FluffyContainers
-# GitHub: https://github.com/FluffyContainers
+# Minimal color palette used by __download output
+declare -A _COLOR=(
+  [OK]="\033[38;05;40m"
+  [ERROR]="\033[38;05;161m"
+  [RESET]="\033[m"
+)
 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+__echo(){
+    echo -e "$@"
+}
 
-#     http://www.apache.org/licenses/LICENSE-2.0
+# [template] !!! DO NOT MODIFY CODE INSIDE, ON NEXT UPDATE CODE WOULD BE REPLACED !!!
+# include: tools
 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# [module: tools]
 
-# [start]
 
 # shellcheck disable=SC2155,SC2015
 
@@ -76,4 +76,22 @@ __download() {
   return ${_ret} 
 }
 
-# [end]
+
+# [template:end] !!! DO NOT REMOVE ANYTHING INSIDE, INCLUDING CURRENT LINE !!!
+
+
+main(){
+    local v1="1.2.3" v2="1.3"
+    __vercomp "${v1}" "${v2}"
+    case $? in
+        0) echo "Versions are equal: ${v1} == ${v2}";;
+        1) echo "${v1} is newer than ${v2}";;
+        2) echo "${v1} is older than ${v2}";;
+    esac
+
+    echo "Decoded: $( __urldecode "https%3A%2F%2Fexample.com%2Ffile.txt" )"
+
+    __download "https://sin-speed.hetzner.com/1GB.bin" "/dev/null"
+}
+
+main "$@"
