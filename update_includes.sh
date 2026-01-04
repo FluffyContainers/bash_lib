@@ -226,11 +226,11 @@ compress_module(){
   local _content="${_TEMPLATES[${_mod}]}"
   
   if [[ "${_compress_type}" == "zstd" ]]; then
-    printf "%s" "${_content}" | zstd -c | base64 | tr -d '\n'
+    printf "%s" "${_content}" | zstd -c | base64 | tr -d '\n' | fold -w 120
   elif [[ "${_compress_type}" == "xz" ]]; then
-    printf "%s" "${_content}" | xz -c | base64 | tr -d '\n'
+    printf "%s" "${_content}" | xz -c | base64 | tr -d '\n' | fold -w 120
   else
-    printf "%s" "${_content}" | gzip -c | base64 | tr -d '\n'
+    printf "%s" "${_content}" | gzip -c | base64 | tr -d '\n' | fold -w 120
   fi
 }
 

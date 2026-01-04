@@ -24,7 +24,13 @@
 #   echo -e "${_COLOR[INFO]}This is info${_COLOR[RESET]}"
 #   echo -e "${_COLOR[ERROR]}Error occurred${_COLOR[RESET]}"
 eval "$(base64 -d <<'B64' | gunzip
-H4sIAAAAAAAAA31SW2/aMBR+z6+wYA9FGlqAsnZDPEQ0nRAVmQLTNHVoMs4hsUgcZCdt0cR/37GNw2XaIpSEfJdz8ed5baIyyHOWAduShCu6zmG8mPR7w+F7fPi9oYecX5PoKYrxJVCqZJxW/AUIlZLuCStFRbngIiXBfDHF/3kp8Z6AIht8q0AWXNCclHW1qyvt8UJ5ruscuVvYq8/4Ha/p/DEi9uoStqfiSNFGXOC9wNKlditAKZqCsrowjqPY6SQkZzKQEu+X9O9BPG/KlJKKFM4Ur1SacS410YyQRpNKgPPeVM0Ysq8kX+Lgx5nELKtRAC4uoXKPC3qrLD8OH04l1pKnWXUaxlIegnj2dTqfGQrKt2THxfbDrpY7t09LXIRP4WRpDNErp3i6uhApBXnNeAVkjZ9SWdYiITcbsyFRY1c5ML3hjnX5Nm98uiQ3DZk5jJWR1cJqsE3jgNaF6rh5FuHydCoKKlKVJIENrfPqFAzTNa4MRQta4BzHNADLStIF0nr32+bvWcdjdVhmXBH9w0A0kKm1OrT+oTQBWR1CE4aSsVriYv8WJ8ByKoF0g2Pkxzeebt9WHrd++oPB8+B+5A9Hg09Fy2LW+wLsfew5VGftCry7d2A0u4RufYfo7Fxi/duhAzEo1/UaoUvIFaF/hwTDaJNHd9wSRAISs26l7qwbqT+6RZmW/D9BVn4KizPwRwOtb19Hx3Nj6LUfudhex/P+AEt7NyKRBAAA
+H4sIAAAAAAAAA31SW2/aMBR+z6+wYA9FGlqAsnZDPEQ0nRAVmQLTNHVoMs4hsUgcZCdt0cR/37GNw2XaIpSEfJdz8ed5baIyyHOWAduShCu6zmG8mPR7w+F7
+fPi9oYecX5PoKYrxJVCqZJxW/AUIlZLuCStFRbngIiXBfDHF/3kp8Z6AIht8q0AWXNCclHW1qyvt8UJ5ruscuVvYq8/4Ha/p/DEi9uoStqfiSNFGXOC9wNKl
+ditAKZqCsrowjqPY6SQkZzKQEu+X9O9BPG/KlJKKFM4Ur1SacS410YyQRpNKgPPeVM0Ysq8kX+Lgx5nELKtRAC4uoXKPC3qrLD8OH04l1pKnWXUaxlIegnj2
+dTqfGQrKt2THxfbDrpY7t09LXIRP4WRpDNErp3i6uhApBXnNeAVkjZ9SWdYiITcbsyFRY1c5ML3hjnX5Nm98uiQ3DZk5jJWR1cJqsE3jgNaF6rh5FuHydCoK
+KlKVJIENrfPqFAzTNa4MRQta4BzHNADLStIF0nr32+bvWcdjdVhmXBH9w0A0kKm1OrT+oTQBWR1CE4aSsVriYv8WJ8ByKoF0g2Pkxzeebt9WHrd++oPB8+B+
+5A9Hg09Fy2LW+wLsfew5VGftCry7d2A0u4RufYfo7Fxi/duhAzEo1/UaoUvIFaF/hwTDaJNHd9wSRAISs26l7qwbqT+6RZmW/D9BVn4KizPwRwOtb19Hx3Nj
+6LUfudhex/P+AEt7NyKRBAAA
 B64
 )"
 # [module: tput] (dependency) (binary)
@@ -41,7 +47,11 @@ B64
 # Read a single key press and return its ASCII code
 # Results: Prints the ASCII decimal code of the pressed key
 eval "$(base64 -d <<'B64' | gunzip
-H4sIAAAAAAAAA3VSXWvbQBB8168YzgqSWgSVA3mIyUMxaTGlJcSPDgRFt4qOyHfi9pQmDf7v3ZNtnEIjhD525mZn5y5JZti6Z1qOnp1H4/pxa+Hdb6n/lDqaPRAceKDGtKbB4NgE4yzkDh2BG09kZcFhdYnOefPH2VD3J3JelQ81ky6EKPqQq8Qz+WCa/9NOtvICb0lcQE3nUFqCuvtyfr5J8zydf66KYpFWrQJmiE6HMYjrASqdK3lUKtkl0vORgqh5suHGsfx/p0ibCschjyYEvSUe+8CXuJaWxB8xUTPUKTSV/NMlL/a2exdHvBfe4vgdE47QDNxR3zcdNU/QhuuHnq7Wy3l1MZ/w1bf1VbbI4KnWKFnfohyQZnfXmwubTTKT7ikdlb7Fwg7yFnT2abM7BBAlftDrNJyI1WBjH3vCE71i8MSM2mphhdFbmMD4ul6uVrKpmt4HcuONFTBu/J6g5VhsZaZIhGsnZNIjHbWTQ99jGPtJPP9ChfuIx+IQRVucaahMjEt5p6Z0zl7QSt4dvcQh/gLztd5HrgIAAA==
+H4sIAAAAAAAAA3VSXWvbQBB8168YzgqSWgSVA3mIyUMxaTGlJcSPDgRFt4qOyHfi9pQmDf7v3ZNtnEIjhD525mZn5y5JZti6Z1qOnp1H4/pxa+Hdb6n/lDqa
+PRAceKDGtKbB4NgE4yzkDh2BG09kZcFhdYnOefPH2VD3J3JelQ81ky6EKPqQq8Qz+WCa/9NOtvICb0lcQE3nUFqCuvtyfr5J8zydf66KYpFWrQJmiE6HMYjr
+ASqdK3lUKtkl0vORgqh5suHGsfx/p0ibCschjyYEvSUe+8CXuJaWxB8xUTPUKTSV/NMlL/a2exdHvBfe4vgdE47QDNxR3zcdNU/QhuuHnq7Wy3l1MZ/w1bf1
+VbbI4KnWKFnfohyQZnfXmwubTTKT7ikdlb7Fwg7yFnT2abM7BBAlftDrNJyI1WBjH3vCE71i8MSM2mphhdFbmMD4ul6uVrKpmt4HcuONFTBu/J6g5VhsZaZI
+hGsnZNIjHbWTQ99jGPtJPP9ChfuIx+IQRVucaahMjEt5p6Z0zl7QSt4dvcQh/gLztd5HrgIAAA==
 B64
 )"
 # [module: menu] (binary)
@@ -52,15 +62,36 @@ B64
 # 
 #    items_csv  - comma-separated list of menu items (e.g., "Item 1,Item 2,Item 3")
 #    menu_title - title displayed at the top of the menu
+#    style      - optional, "number" (default) or "arrow" to show " >" only on the current selection without changing colors
 # 
-# Results: Returns selected item index (0-based) via return code, 255 if cancelled (ESC pressed twice)
+# Results: Returns selected item index (0-based) via return code, 255 if cancelled (ESC pressed twice or Ctrl+C)
 # 
 # Samples:
 #   menu "Option A,Option B,Option C" "Select an option"
 #   selected=$?
 #   [[ $selected -eq 255 ]] && echo "Cancelled" || echo "Selected: $selected"
 eval "$(base64 -d <<'B64' | gunzip
-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
+H4sIAAAAAAAAA61YzW7bRhC+6ymmKzmmYsuQZCtpLCv9kV3AaBoHkXsoHFWgyZVEhCJZcmXZUFgUPffQgw99vjxJZ5ZLcklRjl2UgC2Su/M/880sa3VwPMtd
+2vwYLN/1w2hfBEtRq9VCbofm6ifuLc8FX0RGE9ZQA7xc3zJdaHkwWaSLg0ZHW4qEGYp3Pr7t9tWrgJ4O0yffteXyUT+juHP5oNHTmBDvN9wbNAyjsa7noq6+
+HcewB91ms7T5QjL9hQhSBaAFhuKDt4nU5gbhW756mDDIqeS/hX/Dh8sw8kNgbQassdbkx0xjP0GZkyDkU+d2wAA2lqTHB+znt6OzN2fDy7PTZMfVFTGVTokZ
+DAbAvOXimocMxmN49qzItrFODIsPFH9uzX0MDweU2FhPhhdvLt5f4U0mMB7H6jHhQU+5fzN+cldC/f5sdHY5Rl1qDzhA+bHoAI+vMk1fw8aSckDRfGf6oAf6
+IObckzvpKohorAPdE27Et+3LLDsdx69zP+WhGCtDMtotwZo6D3o9o0z8mStR9npQ7fJtHk9TFXfEtVpaqlSljytSeo3kjnB8LLJuaeXSEViQrHHICnV9J18e
+6S9dMxLn9m11nbagUyi3iePZ3BNJLWixRj1VEknBcUWY63DKQ+eGw7V/CyvHFnOYhv4CAtO2uQ0OyQTTsyHxbqJsRq3EJ2sTST7oZqtfrLcCHVqKEa4rwyUY
+gbJSExX6q3x/gQESFD3VHsdIX2aAdmoMMnYa9mmbJ67jIYAaQeh4Ygq7n+//2DloR7vQMCL+G3QoJTOGsUavCNgHbyeqLILP93/tRJ/v/y4n5gdPpqGKaJw8
+SDW0ukm5b+X9J+y0nkeAN4/in3khZqWEebzIezLnnyebU8ASKna9+KdYl4bhDNp9cE4GKjPwfm+v2eyD7W+EawuW6FvKbePpyKhSu+FAC3MgcVda8nGa2tUQ
+nAFfjpjOgaZIwRuPk/MfoVd5WMlIgKKAm048jtNCVSi8AcI6Am+BX6e635Fc2/d4jvEEt3UJkgnoTKzoRj5OBKUirp06UeCadzhYCR6aliDUkvsJnkIulqEH
+EXe5JQi4MOFua3Uko/hmDBE6LX+xMFsRD8zQpJ2uEwnwp5poMPjB7GAfGBkBnX35001+Dlkz4ZmrhjyTXztREHmaglIGhB8QZ7ql7QmhzLHE8zg8BRRN093P
+882w+dRcuqIJ1JXMEIuTISeI5v4KA/Cage+5d/hP8rWWYYiVpQxHXgjiYu4vBVhz05s53kzNn9IX73mEnKNjvCF3RZq/yDjpNDDarWsz4nYTbhwzdazl23wf
+ur0eFYtlehZ3XSQzzkZDag0R7gexcixOWg9F6O4Nm1LkyFwELo+OpfHSx+xCGg3f7aub79ObIeLDSGqEMVW+YZIw1XPQ+EY+U11kulN5kGZJsspsYsNURQaf
+Pql3I0VwnNOy2kK296S7n/8wGrB9hjabyDU0IctkODk5wRLpsC0NvVteGKmmvj48biWRTWcOdAkXsAxAhGYgIS5xF8WY3zoCZpjcfLp0McgUS+l6sk9SS6Jd
+FRR8uQvnby9Txu9QbdN1VRYjP5l5ZtrYIx/mzmzu4h8mTGBi/EkMEBzr0wRSTFw8I7QzEFbZkTaHbBJhBRSmoKzrtBdHlJkgqFCsMrhKWaf7ikAgRSk5Xz0g
+SDWj1g0wDWucMabPTkuTGrGixrhFQaAUqdn8kd8N0c0Do63PVXS8amvP6oClvyrOaVVjWiJPDZKawlI3mk7LPTd9HCXNSFcznU5HIkSJMy6GSfnTAaxfdVTU
+JlqkqT+HlN9q7iAKyYgp22lekpN2py173kZ7zXzEGgZVyI/8rsmamHbXdwKpSt20xJdK9GXWS5GIR5YZcEIpwnIeQqHvFSTubRHZLZCUxbY6yp6iXGvOrY8E
+i7h/GaHcFL1Qi6XpFlh+WZNUlcMNuo0XasjodaDXhqOvodeF3iH0jnDa+B2MXz9dXR1jTVr8eDxustyMLqas0SisVo8k6VUR2cwVne6LcmyfaG+FYXRlJaxf
+2oxRcsLRq//b6seF6aiS9iFfEWo9Khl7j2WNldB79STOSc7+/6p/KWDa49SB8kkq/dokMSxbs3ByAC2Qz2ncQ0QvMGZYkq868KJHodG+ZBlGID8SIWz2+xS0
+ZVBJ96KSbi+ns/2VV0WJBYe+QeoKoV1JXIdgVi21d7SNdk+jtSvlvuwW6Npy89xf8MrN7aKQdXokllTcszeIui+RIp8JaFtX4VpEAygOafkRIzKtPJQyfyiA
+0HIFtAtZk3e/0k7Z2rNzepkkX8rFlD56lrtg/tGl0BPVB7NyQwSVinkPl4Ot8EMcwZPZmYYiwPnXdhHgr/mUlhL/IPLnc1RLDk+JgtJ5qXQ8jPwLVQybQsIV
+AAA=
 B64
 )"
 # [template:end] !!! DO NOT REMOVE ANYTHING INSIDE, INCLUDING CURRENT LINE !!!
@@ -71,7 +102,7 @@ main(){
     local items="Start service,Stop service,Show status,Quit"
     IFS="," read -ra menu_list <<< "${items}"
 
-    menu "${items}" "Service menu"
+    menu "${items}" "Services" "arrow"
     local choice=$?
 
     if [[ ${choice} -eq 255 ]]; then
