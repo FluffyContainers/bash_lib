@@ -1,17 +1,31 @@
 #!/bin/bash
 
-# Minimal color palette for menu rendering
-declare -A _COLOR=(
-    [SELECTED]="\033[30;47m"   # black text on white background
-    [UNSELECTED]="\033[0;37m" # light gray text
-    [RESET]="\033[0m"
-)
-
 # [template] !!! DO NOT MODIFY CODE INSIDE, ON NEXT UPDATE CODE WOULD BE REPLACED !!!
 # include: menu
 
-# [module: menu]
+# [module: colors] (dependency)
 
+
+# shellcheck disable=SC2155,SC2015
+
+declare -A _COLOR=(
+    [INFO]="\033[38;05;39m"
+    [ERROR]="\033[38;05;161m"
+    [WARN]="\033[38;05;178m"
+    [OK]="\033[38;05;40m"
+    [GRAY]="\033[38;05;245m"
+    [RED]="\033[38;05;160m"
+    [DARKPINK]="\033[38;05;127m"
+
+    # For menu rendering
+    [SELECTED]="\033[30;47m"  # black text on white background
+    [UNSELECTED]="\033[0;37m" # light gray text
+
+    [RESET]="\033[m"
+)
+
+
+# [module: tput] (dependency)
 
 
 moveCursor() {
@@ -30,6 +44,12 @@ readKey(){
     read -rsN 1 _key
     printf %d "'${_key}"   # %x for hex
 }
+
+
+# [module: menu]
+
+# include: colors,tput
+
 
 redrawMenuItems() { 
     local -n _menuItems=$1

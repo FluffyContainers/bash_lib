@@ -16,23 +16,12 @@
 # limitations under the License.
 
 # [start]
-
+# include: colors
 # shellcheck disable=SC2155,SC2015
 
 # =====================
 #  Terminal functions
 # =====================
-
-declare -A _COLOR=(
-    [INFO]="\033[38;05;39m"
-    [ERROR]="\033[38;05;161m"
-    [WARN]="\033[38;05;178m"
-    [OK]="\033[38;05;40m"
-    [GRAY]="\033[38;05;245m"
-    [RED]="\033[38;05;160m"
-    [DARKPINK]="\033[38;05;127m"
-    [RESET]="\033[m"
-)
 
 # __run [-t "command caption" [-s] [-f "echo_func_name"]] [-a] [-o] [--stream] [--sudo] command
 # -t       - instead of command itself, show the specified text

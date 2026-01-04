@@ -19,16 +19,14 @@
 
 # shellcheck disable=SC2155,SC2015
 
-
-cuu1(){
-  echo -e "\E[A"
-}
-
-# https://stackoverflow.com/questions/4023830/how-to-compare-two-strings-in-dot-separated-version-format-in-bash
-# Results: 
-#          0 => =
-#        1 => >
-#          2 => <
+# __vercomp: Compare two version strings in dot-separated format
+# Inputs:
+#   $1 - First version string (e.g., "1.2.3")
+#   $2 - Second version string (e.g., "1.3.0")
+# Results:
+#   0 - Versions are equal ($1 == $2)
+#   1 - First version is greater ($1 > $2)
+#   2 - First version is less ($1 < $2)
 # shellcheck disable=SC2206
 __vercomp () {
     [[ "$1" == "$2" ]] && return 0 ; local IFS=. ; local i ver1=($1) ver2=($2)
@@ -41,10 +39,27 @@ __vercomp () {
     return 0
 }
 
+# __urldecode: Decode URL-encoded string
+# Inputs:
+#   $* - URL-encoded string (e.g., "hello%20world")
+# Results:
+#   Outputs decoded string to stdout (e.g., "hello world")
 __urldecode() { : "${*//+/ }"; echo -e "${_//%/\\x}"; }
 
 __clear_progress(){ printf '\033[A\033[0K\r'; }
 
+# __download: Download file from URL with progress bar
+# Inputs:
+#   -L         - (optional) Follow redirects
+#   $1         - URL to download
+#   $2         - (optional) Destination path (default: ./)
+#                If ends with /, appends filename from URL
+# Results:
+#   0 - Download succeeded
+#   non-zero - Download failed (curl/aria2c exit code)
+# Notes:
+#   Uses aria2c if available, falls back to curl
+#   Shows progress bar and status message
 __download() {
   [[ "${1^^}" == "-L" ]] && { local _follow_link="-L"; shift; } || local _follow_link=""
   local _url="$1"

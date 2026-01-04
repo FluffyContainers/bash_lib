@@ -16,24 +16,8 @@
 # limitations under the License.
 
 # [start]
+# include: colors,tput
 
-
-moveCursor() {
-    echo -ne "\033[$(($2+1));$1f"  # or tput cup "$2" "$1"
-}
-
-
-getCurrentPos(){
-    local _col; local _row
-    # shellcheck disable=SC2162
-    IFS=';' read -sdR -p $'\E[6n' _row _col
-    echo "${_col} ${_row#*[}"
-}
-
-readKey(){
-    read -rsN 1 _key
-    printf %d "'${_key}"   # %x for hex
-}
 
 redrawMenuItems() { 
     local -n _menuItems=$1

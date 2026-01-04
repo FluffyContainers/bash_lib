@@ -64,6 +64,8 @@ declare -A __CONST=(
 
 # key format -> [module_name] = module_content
 declare -A _TEMPLATES=()
+# key format -> [module_name] = comma-separated list of dependencies
+declare -A _MODULE_DEPS=()
 
 
 module_exists(){
@@ -84,10 +86,16 @@ proccess_module(){
     local _module_name=$(basename "${f}")
     local _module_name=${_module_name%.*}
     local _module_content=""
+    local _module_deps=""
     # options
     local _optional=0
 
     while IFS= read -rs line; do
+      # Check for include directive to track dependencies
+      if [[ "${line}" =~ ^#\ ${__CONST[INCLUDE]}\ (.*)$ ]]; then
+        _module_deps="${BASH_REMATCH[1]}"
+      fi
+
       [[ "${line}" == "# ${__CONST[START_BLOCK]}" ]] && {
         local _can_copy=1
         local _scan_options=1
@@ -104,6 +112,7 @@ ${line}"
 
     _TEMPLATES["${_module_name}"]="${_module_content}
 "
+    [[ -n "${_module_deps}" ]] && _MODULE_DEPS["${_module_name}"]="${_module_deps}"
 }
 
 read_modules(){
@@ -159,22 +168,66 @@ build_include_set() {
   done
 }
 
+# Recursively resolve dependencies
+# $1: module name
+# $2: name of associative array for visited modules (nameref)
+# $3: name of array for ordered result (nameref)
+resolve_deps_recursive() {
+  local _mod="$1"
+  local -n _visited_ref="$2"
+  local -n _result_ref="$3"
+
+  # Already visited - avoid circular deps
+  [[ -n "${_visited_ref[$_mod]}" ]] && return
+  _visited_ref["$_mod"]=1
+
+  # If module has dependencies, resolve them first
+  if [[ -n "${_MODULE_DEPS[$_mod]}" ]]; then
+    IFS=',' read -ra _deps <<< "${_MODULE_DEPS[$_mod]}"
+    for dep in "${_deps[@]}"; do
+      dep="$(echo "$dep" | xargs)"
+      [[ -n "$dep" ]] && resolve_deps_recursive "$dep" "$2" "$3"
+    done
+  fi
+
+  # Add this module after its dependencies
+  _result_ref+=("$_mod")
+}
+
 # $1: coma-separated list string list of modules to generate content of
 generate_template(){
   # parse include modules list "mod1,mod2 to an Map"
   local _include_modules="$1"
   IFS=',' read -ra _mods <<< "$_include_modules"
 
+  # Track explicitly requested modules
+  declare -A _explicit=()
+  for mod in "${_mods[@]}"; do
+    mod="$(echo "$mod" | xargs)"
+    [[ -n "$mod" ]] && _explicit["$mod"]=1
+  done
+
+  # Build ordered list with dependencies
+  declare -A _visited=()
+  declare -a _ordered_mods=()
+  
+  for mod in "${_mods[@]}"; do
+    mod="$(echo "$mod" | xargs)"
+    [[ -n "$mod" ]] && resolve_deps_recursive "$mod" _visited _ordered_mods
+  done
+
   echo "# ${__CONST[START_INCLUDE]}"
   echo "# ${__CONST[INCLUDE]} ${_include_modules}"
   echo ""
-  IFS=',' read -ra _modules <<< "${_include_modules}"
 
   # shellcheck disable=SC2094
-
-  for mod in "${_mods[@]}"; do
+  for mod in "${_ordered_mods[@]}"; do
     if [[ -n "${_TEMPLATES[${mod}]}" ]]; then
-      echo "# [module: ${mod}]"
+      if [[ -n "${_explicit[$mod]}" ]]; then
+        echo "# [module: ${mod}]"
+      else
+        echo "# [module: ${mod}] (dependency)"
+      fi
       echo "${_TEMPLATES[${mod}]}"
     else 
       echo "# [module: ${mod}] NOT FOUND or not loaded. Check that the include are in a search path"
