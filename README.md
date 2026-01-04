@@ -32,6 +32,9 @@ In the template folder, where the module injectino would be needed:
 # Include options
 - `# include: module1,module2` — list of modules to inject.
 - `# opts: binary` — (optional) embed modules as compressed base64+gzip blobs with an `eval` loader. Good when you need compact, harder-to-tamper inserts. Omit to keep plain text modules.
+- `# opts: binary zstd` — (optional) embed modules as compressed base64+zstd blobs with an `eval` loader. zstd typically provides better compression ratios and faster decompression than gzip.
+- `# opts: binary xz` — (optional) embed modules as compressed base64+xz blobs with an `eval` loader. xz provides excellent compression ratios, though compression is slower.
+- `# opts: nodocs` — (optional) suppress function documentation comments in the generated output. Can be combined with binary options (e.g., `binary nodocs`).
 
 Options are read from the line immediately after `# include:`.
 

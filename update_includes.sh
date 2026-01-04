@@ -222,16 +222,28 @@ resolve_deps_recursive() {
 
 compress_module(){
   local _mod="$1"
+  local _compress_type="${2:-gzip}"
   local _content="${_TEMPLATES[${_mod}]}"
-  printf "%s" "${_content}" | gzip -c | base64 | tr -d '\n'
+  
+  if [[ "${_compress_type}" == "zstd" ]]; then
+    printf "%s" "${_content}" | zstd -c | base64 | tr -d '\n'
+  elif [[ "${_compress_type}" == "xz" ]]; then
+    printf "%s" "${_content}" | xz -c | base64 | tr -d '\n'
+  else
+    printf "%s" "${_content}" | gzip -c | base64 | tr -d '\n'
+  fi
 }
 
 # $1: coma-separated list string list of modules to generate content of
 # $2: binary mode flag (1 => compressed eval)
+# $3: compression type (gzip or zstd)
+# $4: nodocs flag (1 => suppress documentation)
 generate_template(){
   # parse include modules list "mod1,mod2 to an Map"
   local _include_modules="$1"
   local _binary_mode="${2:-0}"
+  local _compress_type="${3:-gzip}"
+  local _nodocs="${4:-0}"
   IFS=',' read -ra _mods <<< "$_include_modules"
 
   # Track explicitly requested modules
@@ -252,7 +264,20 @@ generate_template(){
 
   echo "# ${__CONST[START_INCLUDE]}"
   echo "# ${__CONST[INCLUDE]} ${_include_modules}"
-  [[ ${_binary_mode} -eq 1 ]] && echo "# ${__CONST[OPTS]} binary"
+  if [[ ${_binary_mode} -eq 1 ]] || [[ ${_nodocs} -eq 1 ]]; then
+    local _opts_line="# ${__CONST[OPTS]}"
+    if [[ ${_binary_mode} -eq 1 ]]; then
+      if [[ "${_compress_type}" == "zstd" ]]; then
+        _opts_line+=" binary zstd"
+      elif [[ "${_compress_type}" == "xz" ]]; then
+        _opts_line+=" binary xz"
+      else
+        _opts_line+=" binary"
+      fi
+    fi
+    [[ ${_nodocs} -eq 1 ]] && _opts_line+=" nodocs"
+    echo "${_opts_line}"
+  fi
   echo ""
 
   # shellcheck disable=SC2094
@@ -263,13 +288,19 @@ generate_template(){
 
       if [[ ${_binary_mode} -eq 1 ]]; then
         echo "# [module: ${mod}]${_is_dep} (binary)"
-        if [[ -n "${_MODULE_DOCS[$mod]}" ]]; then
+        if [[ ${_nodocs} -eq 0 ]] && [[ -n "${_MODULE_DOCS[$mod]}" ]]; then
           while IFS= read -r __docline; do
             echo "# ${__docline}"
           done <<< "$(printf '%b' "${_MODULE_DOCS[$mod]}")"
         fi
-        local _blob; _blob=$(compress_module "${mod}")
-        printf 'eval "$(base64 -d <<'"'"'B64'"'"' | gunzip\n%s\nB64\n)"\n' "${_blob}"
+        local _blob; _blob=$(compress_module "${mod}" "${_compress_type}")
+        if [[ "${_compress_type}" == "zstd" ]]; then
+          printf 'eval "$(base64 -d <<'"'"'B64'"'"' | zstd -d\n%s\nB64\n)"\n' "${_blob}"
+        elif [[ "${_compress_type}" == "xz" ]]; then
+          printf 'eval "$(base64 -d <<'"'"'B64'"'"' | xz -d\n%s\nB64\n)"\n' "${_blob}"
+        else
+          printf 'eval "$(base64 -d <<'"'"'B64'"'"' | gunzip\n%s\nB64\n)"\n' "${_blob}"
+        fi
       else
         echo "# [module: ${mod}]${_is_dep}"
         echo "${_TEMPLATES[${mod}]}"
@@ -302,8 +333,7 @@ update_file(){
   local _exit_code=2
   local _template=""
   local _include_modules=""
-  local _binary_mode=0
-
+  local _binary_mode=0  local _compress_type="gzip"
   mapfile -t _content <<< "$(<"${_file}")"
 
   for ((i=0; i<${#_content[@]}; i++)); do
@@ -319,9 +349,18 @@ update_file(){
         next_line="${_content[$((i+1))]}"
         if [[ "${next_line}" =~ ^#\ ${__CONST[OPTS]}\ (.*)$ ]]; then
           i=$((i + 1))
-          [[ "${BASH_REMATCH[1],,}" =~ (^|[[:space:]])binary($|[[:space:]]) ]] && _binary_mode=1
+          local _opts="${BASH_REMATCH[1],,}"
+          [[ "${_opts}" =~ (^|[[:space:]])binary($|[[:space:]]) ]] && _binary_mode=1
+          [[ "${_opts}" =~ (^|[[:space:]])nodocs($|[[:space:]]) ]] && _nodocs=1
+          if [[ "${_opts}" =~ (^|[[:space:]])zstd($|[[:space:]]) ]]; then
+            _compress_type="zstd"
+          elif [[ "${_opts}" =~ (^|[[:space:]])xz($|[[:space:]]) ]]; then
+            _compress_type="xz"
+          else
+            _compress_type="gzip"
+          fi
         fi
-        _template=$(generate_template "${_include_modules}" "${_binary_mode}")
+        _template=$(generate_template "${_include_modules}" "${_binary_mode}" "${_compress_type}" "${_nodocs}")
       else 
         _template=$(generate_template_empty)
       fi
@@ -341,9 +380,20 @@ update_file(){
         next_line="${_content[$((i+1))]}"
         if [[ "${next_line}" =~ ^#\ ${__CONST[OPTS]}\ (.*)$ ]]; then
           i=$((i + 1))
-          [[ "${BASH_REMATCH[1],,}" =~ (^|[[:space:]])binary($|[[:space:]]) ]] && _binary_mode=1 || _binary_mode=0
+          local _opts="${BASH_REMATCH[1],,}"
+          [[ "${_opts}" =~ (^|[[:space:]])binary($|[[:space:]]) ]] && _binary_mode=1 || _binary_mode=0
+          [[ "${_opts}" =~ (^|[[:space:]])nodocs($|[[:space:]]) ]] && _nodocs=1 || _nodocs=0
+          if [[ "${_opts}" =~ (^|[[:space:]])zstd($|[[:space:]]) ]]; then
+            _compress_type="zstd"
+          elif [[ "${_opts}" =~ (^|[[:space:]])xz($|[[:space:]]) ]]; then
+            _compress_type="xz"
+          else
+            _compress_type="gzip"
+          fi
         else
           _binary_mode=0
+          _compress_type="gzip"
+          _nodocs=0
         fi
       fi
       continue
@@ -352,7 +402,7 @@ update_file(){
     if [[ "${line}" == "# ${__CONST[END_INCLUDE]}" ]]; then
       local _can_copy=1
       if [[ -n ${_include_modules} ]]; then
-        _template=$(generate_template "${_include_modules}" "${_binary_mode}")
+        _template=$(generate_template "${_include_modules}" "${_binary_mode}" "${_compress_type}" "${_nodocs}")
       fi
 
       echo "${_template}"
